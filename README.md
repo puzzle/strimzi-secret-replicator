@@ -15,9 +15,9 @@ helm repo add strimzi https://strimzi.io/charts/
 kubectl create ns kafka
 helm install strimzi --namespace kafka strimzi/strimzi-kafka-operator
 
-kubectl -n kafka apply -f cluster.yaml # then be patient
-kubectl -n kafka apply -f topic.yaml
-kubectl -n kafka apply -f user.yaml
+kubectl -n kafka apply -f resources/cluster.yaml # then be patient
+kubectl -n kafka apply -f resources/topic.yaml
+kubectl -n kafka apply -f resources/user.yaml
 ```
 
 Then annotate the user and observe the actions of the operator
