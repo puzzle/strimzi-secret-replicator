@@ -1,4 +1,4 @@
-# strimzi-secret-replicator
+# strimzi-secret-replicator ![Docker](https://github.com/puzzle/strimzi-secret-replicator/workflows/Docker/badge.svg?branch=master)
 The `strimzi-secret-replicator` replicates secrets which belong to a Strimzi `KafkaUser` to other namespaces.
 
 ## Usage
