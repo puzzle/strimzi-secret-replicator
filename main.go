@@ -15,9 +15,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+var (
+	version = "n/a"
+	commit  = "n/a"
+)
+
 func main() {
 	log := logf.Log.WithName("manager")
 	ctrl.SetLogger(zap.Logger(true))
+	log.Info("starting strimzi-secret-replicator", "version", version, "commit", commit)
 	// Setup a Manager
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
 	if err != nil {
@@ -39,7 +45,8 @@ func main() {
 	}
 
 	// enqueue for secrets which have kafka user as owner ref
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{OwnerType: initKafkaUser()}); err != nil {
+	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{OwnerType: initKafkaUser()})
+	if err != nil {
 		log.Error(err, "unable to watch secrets")
 		os.Exit(1)
 	}

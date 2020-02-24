@@ -1,14 +1,27 @@
-# strimzi-secret-replicator [![Build](https://github.com/buehlmann/strimzi-secret-replicator/workflows/Docker/badge.svg?branch=master)](https://github.com/puzzle/strimzi-secret-replicator/actions) [![Dockerhub](https://img.shields.io/docker/pulls/puzzle/strimzi-secret-replicator.svg)](https://hub.docker.com/repository/docker/puzzle/strimzi-secret-replicator)
+# strimzi-secret-replicator
+[![Go Report Card](https://goreportcard.com/badge/github.com/puzzle/strimzi-secret-replicator)](https://goreportcard.com/report/github.com/puzzle/strimzi-secret-replicator)
+[![Build](https://github.com/puzzle/strimzi-secret-replicator/workflows/Build/badge.svg?branch=master)](https://github.com/puzzle/strimzi-secret-replicator/actions)
+[![Dockerhub](https://img.shields.io/docker/pulls/puzzle/strimzi-secret-replicator.svg)](https://hub.docker.com/repository/docker/puzzle/strimzi-secret-replicator)
 
-## Usage
-* Run `strimzi-secret-replicator`
+The `strimzi-secret-replicator` allows to replicate secrets of `KafkaUser`s to other namespaces. This is intended in environments where you want to give applications in certain namespaces access to a KafkaCluster without giving them permission to read secrets in the namespace where the KafkaUsers are created.
+
+To enable the replication for a KafkaUser the annotation `secret-replicator.k8s.puzzle.ch/to-namespace=target-namespace` has to be set on that KafkaUser.
+
+## Development
+### Quickstart
+* Build
+```
+make build
+```
+* Run
 ```
 ./strimzi-secret-replicator
 ```
 
-## Development Setup
-```
-kind create cluster
+### Full Setup
+To test the full setup together with Strimzi you need a test cluster where Strimzi is installed. The follwing example shows a setup with [kind](https://kind.sigs.k8s.io/) but the same can be achieved with minikube/minishift or any other cluster.
+```shell
+kind create cluster # or use minikube/minishift or other test cluster
 
 helm repo add strimzi https://strimzi.io/charts/
 kubectl create ns kafka
@@ -19,8 +32,14 @@ kubectl -n kafka apply -f resources/topic.yaml
 kubectl -n kafka apply -f resources/user.yaml
 ```
 
-Then annotate the user and observe the actions of the operator
+Make sure that your cluster configuration (`KUBECONFIG` or `~/.kube/config`) points to your desired cluster and start the `strimzi-secret-replicator`.
+```shell
+./strimzi-secret-replicator
 ```
+
+Then annotate the user and observe the actions of the operator
+```shell
+# create target namespaces
 kubectl create ns foo
 kubectl create ns bla
 
@@ -38,3 +57,7 @@ kubectl -n kafka annotate kafkausers.kafka.strimzi.io my-user secret-replicator.
   * We do not necessarly have to remove the secrets from namespaces because we already leaked that secret and even if we remove it we can not be sure that is already copied somewhere else. So we have to ensure in a other way that the secret is no longer valid (probably deleting the entire KafkaUser would be always the best option if this does revoke the certificate)
   * Probably it would be the best to replicate one secret always only to one namespace. Then we can delete a KafkaUser and only affect one namespace.
 * Secret has different name than KafkaUser -> currently not handeld, is this even possible?
+* Describe/prepare Installation resources
+  * kubectl apply
+  * kustomize
+  * helm
