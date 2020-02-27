@@ -24,14 +24,13 @@ var _ reconcile.Reconciler = &secretReplicator{}
 var (
 	toNamespaceAnnotation = "secret-replicator.k8s.puzzle.ch/to-namespace"
 	ownerAnnotation       = "secret-replicator.k8s.puzzle.ch/owner"
-	DEBUG                 = 4
 )
 
 func (sr *secretReplicator) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.Background()
 	log := sr.log.WithValues("namespace", request.Namespace, "name", request.Name)
 
-	log.V(DEBUG).Info("start reconcile")
+	log.V(4).Info("start reconcile")
 	secret := &corev1.Secret{}
 	if err := sr.Get(ctx, request.NamespacedName, secret); err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
@@ -44,17 +43,17 @@ func (sr *secretReplicator) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	targetNamespaces, found := kafkaUser.GetAnnotations()[toNamespaceAnnotation]
 	if !found {
-		// TODO: check created by annotation to recreate replicated secrets which got deleted
-		log.V(DEBUG).Info("skip because there is no annotation")
+		log.V(4).Info("skip because there is no annotation")
 		return reconcile.Result{}, nil
 	}
 
 	namespaces := strings.Split(targetNamespaces, ",")
-	log.V(DEBUG).Info("start replication", "namespaces", namespaces)
+	log.V(4).Info("start replication", "namespaces", namespaces)
 	errs := []error{}
 	for _, namespace := range namespaces {
 		toSecret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secret.Name, Namespace: namespace}}
 		op, err := controllerutil.CreateOrUpdate(ctx, sr, toSecret, func() error {
+			toSecret.Annotations[ownerAnnotation] = "true"
 			toSecret.Data = secret.Data
 			return nil
 		})
@@ -64,7 +63,7 @@ func (sr *secretReplicator) Reconcile(request reconcile.Request) (reconcile.Resu
 			errs = append(errs, err)
 		} else {
 			if op == controllerutil.OperationResultNone {
-				log.V(DEBUG).Info("secret unchanged", "targetNamespace", namespace)
+				log.V(4).Info("secret unchanged", "targetNamespace", namespace)
 			} else {
 				log.Info("secret replicated", "operation", op, "targetNamespace", namespace)
 			}
