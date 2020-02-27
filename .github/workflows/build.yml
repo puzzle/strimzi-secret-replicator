@@ -53,6 +53,7 @@ jobs:
       - name: Docker build
         run: |
            mv dist/strimzi-secret-replicator strimzi-secret-replicator
+           chmod 755 strimzi-secret-replicator
            make docker-build
 
       - name: Log into registry
